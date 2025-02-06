@@ -1,0 +1,416 @@
+---
+title: "I'm Going to Miss My Flight! <img src=\"https://nlepera.github.io/sta551/HW01/img/penguin_cute.png\" style=\"float: right; width: 12%\"/>"
+subtitle: "An analysis of flight delay times across airports"
+author:
+- name: Natalie LePera
+  affiliation: West Chester University | STA552 - HW 01
+date: "05 Feb 2025"
+output:
+  html_document: 
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+    toc_collapse: yes
+    number_sections: yes
+    code_folding: hide
+    code_download: yes
+    smooth_scroll: true
+    theme: readable
+    fig_align: center
+    df_print: kable
+---
+
+```{css, echo = FALSE}
+h1.title {  /* Title - font specifications of the report title */
+  font-weight:bold;
+  color: darkmagenta ;
+}
+h1.subtitle {  /* Title - font specifications of the report title */
+  font-weight:bold;
+  color: darkmagenta ;
+}
+h4.author { /* Header 4 - font specifications for authors  */
+  font-family: system-ui;
+  color: navy;
+}
+h4.date { /* Header 4 - font specifications for the date  */
+  font-family: system-ui;
+  color: navy;
+}
+h1 { /* Header 1 - font specifications for level 1 section title  */
+    font-weight:bold;
+    color: navy;
+    text-align: left;
+}
+h2 { /* Header 2 - font specifications for level 2 section title */
+    font-weight:bold;
+    color: navy;
+    text-align: left;
+}
+
+h3 { /* Header 3 - font specifications of level 3 section title  */
+    font-weight:bold;
+    color: navy;
+    text-align: left;
+}
+
+h4 { /* Header 4 - font specifications of level 4 section title  */
+    color: darkred;
+    text-align: left;
+}
+
+body {
+  background-color:white;
+}
+
+.highlightme { 
+  background-color:yellow; 
+}
+
+p { 
+  background-color:white; 
+}
+
+h5 {
+  color: navy;
+}
+
+.iframe {
+  text-align: center;
+}
+
+a:link {
+  color: darkmagenta;
+}
+
+.figlabel {
+  text-align: center;
+  color: slategray;
+  font-style: italic;
+  font-size: 18;
+}
+
+.td1 {
+  font-weight: bold;
+}
+
+th, td {
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+tr:hover {background-color: coral;}
+```
+
+```{r setup, include=FALSE}
+if (!require("dplyr")) {
+    install.packages("dplyr")              
+    library("dplyr")
+}
+
+if (!require("plyr")) {
+    install.packages("plyr")              
+    library("plyr")
+}
+
+if (!require("stringr")) {
+    install.packages("stringr")              
+    library("stringr")
+}
+
+if (!require("plotly")) {
+    install.packages("plotly")              
+    library("plotly")
+}
+
+if (!require("pandoc")) {
+    install.packages("pandoc")              
+    library("pandoc")
+}
+
+if (!require("gridExtra")) {
+    install.packages("gridExtra", dependencies = TRUE)              
+    library("gridExtra")
+}
+
+if (!require("grid")) {
+    install.packages("grid")              
+    library("grid")
+}
+if (!require("raster")) {
+    install.packages("raster")              
+    library("raster")
+}
+if (!require("dbscan")) {
+    install.packages("dbscan")              
+    library("dbscan")
+}
+if (!require("pROC")) {
+    install.packages("pROC")              
+    library("pROC")
+}
+if (!require("ggridges")) {
+    install.packages("ggridges")              
+    library("ggridges")
+}
+if (!require("knitr")) {
+    install.packages("knitr")              
+    library("knitr")
+}
+if (!require("GGally")) {
+    install.packages("GGally")              
+    library("GGally")
+}
+if (!require("ggplot2")) {
+    install.packages("ggplot2")              
+    library("gglpot2")
+}
+if (!require("cluster")) {
+    install.packages("cluster")              
+    library("cluster")
+}
+if (!require("kableExtra")) {
+    install.packages("kableExtra", dependencies = TRUE)              
+    library("kableExtra")
+}
+if (!require("forcats")) {
+    install.packages("forcats", dependencies = TRUE)              
+    library("forcats")
+}
+if (!require("rpart")) {
+    install.packages("rpart", dependencies = TRUE)              
+    library("rpart")
+}
+if (!require("rpart.plot")) {
+    install.packages("rpart.plot", dependencies = TRUE)              
+    library("rpart.plot")
+}
+if (!require("metan")) {
+    install.packages("metan", dependencies = TRUE)              
+    library("metan")
+}
+ if (!require("factoextra")) {
+   install.packages("factoextra", dependencies = TRUE)
+   library("factoextra")
+ }
+ if (!require("pander")) {
+   install.packages("pander", dependencies = TRUE)
+   library("pander")
+ }
+
+knitr::opts_chunk$set(echo = TRUE,       
+                      warning = FALSE,   
+                      result = TRUE,   
+                      message = FALSE,
+                      comment = FALSE,
+                      console = FALSE,
+                      fig.align = 'center')
+
+options(DT.options = list(pageLength = 5, scrollX = TRUE))
+```
+
+# Introduction
+
+Air travel has become a pivotal feature of the ever globalized world, driving global trade, connecting individuals and countries alike, and driving global economic growth.  According to the <a href="https://atag.org/facts-figures">Air Transport Action Group</a> in 2023, a total of 35.3 million flights carried a total of <b>4.4 billion passengers</b> and <b>61.4 tons of cargo</b> between 4,072 global airports.  This resulted in a $4.1 trillion total global economic contribution in 2023 alone. While only 1% of all global trade is conducted through air travel, air shipping accounts for 33% of all trade value, indicating that the most expensive goods are shipped via air travel. 
+
+Due to the massive impact of air travel on our global communities and GDPs, there has been significant efforts implemented to streamline air travel and reduce fight delays to ensure smooth predictable travel.  Mitigation and reduction of overall air travel delays will allow for increased air travel driven trade output and overall boosts to the global economy.  In order to properly mitigate air travel delays, confounding factors that may impact flight delays were captured by Deepti Gupta in Applied Analytics through Case Studies Using SAS and R for analysis and modeling. 
+ 
+
+## Data Details
+
+Flight delay data as collected from <i>Applied Analytics through Case Studies Using SAS and R, Deepti Gupta by APress, ISBN - 978-1-4842-3525-6</i> was downloaded from <a ref="https://pengdsci.github.io/datasets/">https://pengdsci.github.io/datasets/</a>.  
+
+A total of <b>3593 flights</b> were analyzed for <b>11 variables of interest</b> (1 categorical & 11 numeric).  The flight variables as recorded include:
+
+<table style="width:100%">
+<thead><tr>
+<th>Variable Name</th>
+<th>Variable Type</th>
+<th>Details</th>
+</tr></thead>
+<tr><td class = "td1">Carrier</td><td>Categorical</td><td>Airline (Carrier)</td></tr>
+<tr><td class = "td1">Airport Distance</td><td>Numeric</td><td>Distance (miles) between departure and arrival airport</td>
+<tr><td class = "td1">Number of Flights</td><td>Numeric</td><td>Total number of flights at arrival airport</td></tr>
+<tr><td class = "td1">Weather</td><td>Numeric</td><td>A ranking of delays due to weather condition (0: Mild to 10: Extreme)</td></tr>
+<tr><td class = "td1">Suport Crew</td><td>Numeric</td><td>Total number of support crew available</td></tr>
+<tr><td class = "td1">Baggage Loading Time</td><td>Numeric [Binned]</td><td>Total time for baggage loading (minutes)</td></tr>
+<tr><td class = "td1">Late Plane Arrival</td><td>Numeric</td><td>Delay time for plane arrival prior to flight (minutes)</td></tr>
+<tr><td class = "td1">Cleaning</td><td>Numeric [Binned]</td><td>Time required to clean plane after arrival prior to passenger loading (minutes)</td></tr>
+<tr><td class = "td1">Fueling</td><td>Numeric</td><td>Time required to fuel aircraft (minutes)</td></tr>
+<tr><td class = "td1">Secutiry</td><td>Numeric</td><td>Time required for security checks (minutes)</td></tr>
+<tr><td class = "td1">Arrival Delay</td><td>Numeric</td><td>Total flight delay time (minutes)</td></tr>
+</table>
+
+<font class = "figlabel">note: numeric variables (Weather & Cleaning) were binned to allow for categorical styled handling</font>
+
+```{r}
+delay <- read.csv("https://nlepera.github.io/sta552/HW01/data/Flight_delay-data.csv")
+
+```
+
+
+## Analysis Goals
+
+Through analyzing this flight data I set out to determine the factors with the greatest impact on overall flight delays.  Through identifying the factors with greatest impact on flight arrival delays this information can then be leveraged by airports and airlines to improve staffing, streamline pre-flight processes, and ultimately mitigate delays due to factors within the airlines' or airports' control.
+
+# Exploratory Data Analysis
+
+Prior to any data analysis and visualization, the airline delay data was cleaned and modified to meet the requirements of the assignment.  To properly analyze the data, two numeric variables were binned to create categorical values (baggage loading time & cleaning time).  Additionally, outliers and impossible values were identified and removed. 
+
+
+## Outlier Removal 
+
+A cursory analysis of all data points identified four (4) observations with impossible outliers in the cleaning time variable. These values are known to be impossible as a negative duration for cleaning value is impossible. Rather than dropping all data associated with these erroneous observations, these negative values were replaced with `NA` to allow for the remaining observation data to be utilized. 
+
+```{r}
+impossible <- delay %>% filter(Cleaning_o < 0) %>% select(c(Carrier, Cleaning_o, Arr_Delay))
+
+pander::pander(impossible, caption = "Summary of Impossible Cleaning Time Observations")
+
+delay.clean <- delay %>% 
+  mutate(Cleaning_o = replace(Cleaning_o, Cleaning_o < 0, "NA"))
+
+delay.clean$Cleaning_o <- as.numeric(delay.clean$Cleaning_o)
+
+pander::pander(summary(delay.clean$Cleaning_o), caption = "Summary of Cleaning Time After Missing Value Removal")
+```
+
+## Binning
+
+As outlined in the table above in section <b>1.2 Data Details</b>, two numerical variables were binned to create pseudo categorical variables.  The baggage loading time variable was binned in to three (3) duration groups: fast (14 - 15 minutes), moderate (16 - 17 minutes), slowest (18 - 19).  Additionally, the cleaning time variable was binned in to four (4) duration groups: immediate (0 - 5 minutes), quick (6 - 11 minutes), moderate (12 - 17 minutes), and slow (18 - 23 minutes).  By binning these numeric variables, additional categorical analysis may be conducted. 
+
+```{r}
+bin_clean <- c(0, 6, 12, 18, 23)
+labels_clean <- c("Immediate", "Quick", "Moderate", "Slow")
+
+delay.clean <- delay.clean %>% 
+  mutate(Cleaning_o = cut(Cleaning_o, breaks = bin_clean, labels = labels_clean, right = TRUE, include.lowest = TRUE))
+
+bin_baggage <- c(14, 16, 18, 19)
+labels_baggage <- c("Fast", "Moderate", "Slow")
+
+delay.clean <- delay.clean %>% 
+  mutate(Baggage_loading_time = cut(Baggage_loading_time, breaks = bin_baggage, labels = labels_baggage, right = TRUE, include.lowest = TRUE))
+
+binned_columns <- delay.clean %>% 
+  select(c(Cleaning_o, Baggage_loading_time))
+
+pander::pander(summary(binned_columns), caption = "Binned Variables Summary")
+```
+
+## Forced Missing Values
+
+For the purposes of this exercise missing values were artificially created per the assignment instructions.  Missing values were forced for weather, support crew, and late inital plane arrival time; a summary table below indicating the total number of missing values is included for ease of reference. 
+
+```{r}
+weather.missing <- sample(1:3593, 5, replace = FALSE)
+late.missing <- sample(1:3593, 6, replace = FALSE)
+support.missing <- sample(1:3593, 4, replace = FALSE)
+delay.clean$Weather[weather.missing] <- NA
+delay.clean$Late_Arrival_o[late.missing] <- NA
+delay.clean$Support_Crew_Available[support.missing] <- NA
+
+kable(sapply(delay.clean, function (x) sum(is.na(x))), caption = "Count of Blank Values", col.names = c("Variables", "Count of Blank Values")) %>% 
+  kable_styling()
+```
+
+
+# Variable Relationship Exploration
+
+## Binned Data Comparrison
+
+An initial review of the binned cleaning time and binned baggage loading time compared to overall flight delay time illustrates that overall the baggage loading time has a greater impact on total flight delay time.  The greater the duration of the baggage load time, the greater the overall end flight delay.  This finding is considerable as the difference in bag loading time is only a 2 minute window for each group:
+    fast (14 - 15 minutes), moderate (16 - 17 minutes), slowest (18 - 19)
+
+
+With this information, airlines and airports can prioritize baggage handler staffing over cleaning team staffing to improve flight delay times with minimal change to ground procedures.  Shaving 1 to 2 minutes of baggage loading time can in turn reduce flight delays significantly.  
+
+```{r }
+par(mfrow = c(1,2))
+layout <- layout(matrix(c(1,1,2,2), 2, 2, byrow = FALSE))
+boxplot(delay.clean$Arr_Delay ~ delay.clean$Cleaning_o,
+                               xlab = "Cleaning Duration (mins)",
+                               ylab = "Flight Delay (mins)",
+                               col = c("skyblue", "pink", "orange"),
+                               main = "Impact of Cleaning Time 
+on Flight Delay")
+
+boxplot(delay.clean$Arr_Delay ~ delay.clean$Baggage_loading_time,
+                               xlab = "Baggage Load Duration (mins)",
+                               ylab = "Flight Delay (mins)",
+                               col = c("skyblue", "pink", "orange", "purple"),
+                               main = "Impact of Baggage Load Time 
+on Flight Delay")
+
+```
+
+## Staffing Needs Analysis
+
+Diving further into the staffing needs, overall number of available support staff compared to flight delays was investigated, controlling for baggage loading speed. A clear pattern emerges illustrating that the greater number of support staff available, a greater bag loading speed is seen, and thus a reduction in flight delays is also seen.  This trend again illustrates the importance of proper airport staffing overall to reduce flight delays. 
+
+```{r}
+plot_ly(data = delay.clean, x = ~Support_Crew_Available, y = ~Arr_Delay, 
+                     color = ~Baggage_loading_time, colors = c("skyblue", "pink", "orange"),
+                     marker = list(size= ~Arr_Delay/15)) %>% 
+  layout(title = "Correlation Between Support Crews & Flight Delays",
+         xaxis = list(title = "Total Support Staff Available"),
+         ylab = list(title = "Total Flight Delay (mins)"))
+
+
+```
+
+An overall pairwise comparison of flight delays compared to late incoming plane arrivals, fueling time, and security check duration was completed controlling for both the overall baggage loading time to examine for further compounding factors relating to overall flight delays.  
+
+```{r, fig.height= 8, fig.width= 8}
+
+delay.clean.plot <- delay.clean
+
+names(delay.clean.plot) = c("Carrier", "Airport_Distance", "Flight_Totals", "Weather", "Support", "Baggage", "Late_Plane", "Cleaning", "Fueling", "Security", "Flight_Delay")
+
+pairwise.bags <- ggpairs(delay.clean.plot, columns = c(7, 9:11), aes(color = factor(Baggage), alpha= 0.4),
+        upper = list(continous = wrap("cor"), size = 3),
+             margin = list(l = 50, r = 50, b = 50, t = 50, pad = 20)) + 
+  ggtitle("Pairwise Comparrison of Plane Delays - Baggage Loading") +
+  theme (
+    plot.title = element_text(hjust = 1),
+    plot.margin = unit(c(1, 2, 2, 1), "cm"))
+
+ggplotly(pairwise.bags)
+
+
+```
+
+
+As illustrated in the above pairwise plot, incoming plane delays also illustrate a strong correlation with overall flight delay times. When controlling for overall baggage loading times, it is evident that increased delays in incoming planes correlates with both increased flight delays and increased baggage loading times. Again the overall flight delay times and overall baggage loading times demonstrate a slight negative correlation with the total number of support crews available.  This further illustrates the need for airlines to adequately staff their support teams to aid in realisitic plane turnaround time and reduce overall flight delays.
+
+```{r}
+par(mfrow = c(1,2))
+layout <- layout(matrix(c(1,1,2,2), 2, 2, byrow = FALSE))
+plot_ly(data = delay.clean, x = ~Late_Arrival_o, y = ~Arr_Delay, 
+                     color = ~Baggage_loading_time, colors = c("skyblue", "pink", "orange"),
+                     marker = list(size= ~Arr_Delay/15)) %>% 
+  layout(title = "Correlation Between Incoming Plane Delay & Flight Delays",
+         xaxis = list(title = "Incoming Plane Delay Time (mins)"),
+         yaxis = list(title = "Total Flight Delay (mins)"))
+
+plot_ly(data = delay.clean, x = ~Support_Crew_Available, y = ~Late_Arrival_o, 
+                     color = ~Baggage_loading_time, colors = c("skyblue", "pink", "orange"),
+                     marker = list(size= ~Arr_Delay/15)) %>% 
+  layout(title = "Correlation Between Available Support Crew & Incoming Plane Delays",
+         xaxis = list(title = "Available Support Crews"),
+         yaxis = list(title = "Incoming Plane Delays (mins)"))
+
+
+```
+
+
+# Conclusions
+
+Overall it has been demonstrated that in order to reduce flight delays, the primary point of focus should be proper airline and airport staffing.  With razor thin margins on baggage loading time, extra planning and staffing should be focused around ensuring rapid baggage loading into outgoing flights.  A secondary focus must be placed on ensuring incoming plane delays are mitigated to prevent downstream backup, and reduce flight delays overall.   Proper staffing and reduction in delays will lead to increased airline profits, increased customer satisfaction, and overall increased consistency and adherence to flight schedules. Improved adherence to flight schedules will also result in reduction of potential aviation fines for both the airlines and all serviced airports. 
+
+
+# References
+
+Data Source: Applied Analytics through Case Studies Using SAS and R, Deepti Gupta by APress, ISBN - 978-1-4842-3525-6
+
+Air travel: https://atag.org/facts-figures
