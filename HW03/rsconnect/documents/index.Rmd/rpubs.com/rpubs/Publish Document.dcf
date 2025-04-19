@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/1297085/975664735d7741a08ce53e2b691b8d0e
+bundleId: https://api.rpubs.com/api/v1/document/1297085/975664735d7741a08ce53e2b691b8d0e
+url: http://rpubs.com/nlepera/1297085
+version: 1
