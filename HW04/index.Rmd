@@ -1,0 +1,1123 @@
+---
+title: "A Blind Taste Test <img src=\"https://nlepera.github.io/sta551/HW01/img/penguin_cute.png\" style=\"float: right; width: 12%\"/>"
+subtitle: "Predicting sommelier quality rankings of wine and wine type (red / white) utilizing chemcial composition alone."
+author:
+- name: Natalie LePera
+  affiliation: West Chester University | STA552 - HW 04
+date: "02 Apr 2025"
+output:
+  html_document: 
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+    toc_collapse: yes
+    number_sections: yes
+    code_folding: hide
+    code_download: yes
+    smooth_scroll: true
+    theme: readable
+    fig_align: center
+    df_print: kable
+---
+
+```{css, echo = FALSE}
+h1.title {  /* Title - font specifications of the report title */
+  font-weight:bold;
+  color: darkmagenta ;
+  font-family: verdana;
+}
+h1.subtitle {  /* Title - font specifications of the report title */
+  font-weight:bold;
+  color: darkmagenta ;
+  font-family: verdana;
+}
+h4.author { /* Header 4 - font specifications for authors  */
+  font-family: verdana;
+  color: navy;
+}
+h4.date { /* Header 4 - font specifications for the date  */
+  font-family: verdana;
+  color: navy;
+}
+h1 { /* Header 1 - font specifications for level 1 section title  */
+    font-weight:bold;
+    color: navy;
+    text-align: left;
+  font-family: verdana;
+}
+h2 { /* Header 2 - font specifications for level 2 section title */
+    font-weight:bold;
+    color: navy;
+    text-align: left;
+  font-family: verdana;
+}
+
+h3 { /* Header 3 - font specifications of level 3 section title  */
+    font-weight:bold;
+    color: navy;
+    text-align: left;
+  font-family: verdana;
+}
+
+h4 { /* Header 4 - font specifications of level 4 section title  */
+    color: darkred;
+    text-align: left;
+    font-family: verdana;
+}
+
+.hred { /* Header 4 - font specifications of level 4 section title  */
+    color: darkred;
+    text-align: left;
+    font-family: verdana;
+    font-weight: bold;
+}
+
+body {
+  background-color:white;
+  font-family: verdana;
+}
+
+.highlightme { 
+  background-color:yellow; 
+}
+
+p { 
+  background-color:white; 
+  font-family: verdana;
+}
+
+h5 {
+  color: navy;
+  font-family: verdana;
+}
+
+.iframe {
+  text-align: center;
+}
+
+a:link {
+  color: darkmagenta;
+  font-family: verdana;
+}
+
+.figlabel {
+  text-align: center;
+  color: slategray;
+  font-style: italic;
+  font-size: 18;
+  font-family: verdana;
+}
+
+.td1 {
+  font-weight: bold;
+  font-family: verdana;
+}
+
+th, td {
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+tr:hover {background-color: coral;}
+```
+
+```{r setup, include=FALSE}
+if (!require("dplyr")) {
+    install.packages("dplyr")              
+    library("dplyr")
+}
+if (!require("misty")) {
+    install.packages("misty", dependencies = TRUE)              
+    library("misty")
+}
+
+if (!require("plyr")) {
+    install.packages("plyr")              
+    library("plyr")
+}
+
+if (!require("stringr")) {
+    install.packages("stringr")              
+    library("stringr")
+}
+
+if (!require("plotly")) {
+    install.packages("plotly")              
+    library("plotly")
+}
+
+if (!require("pandoc")) {
+    install.packages("pandoc")              
+    library("pandoc")
+}
+
+if (!require("gridExtra")) {
+    install.packages("gridExtra", dependencies = TRUE)              
+    library("gridExtra")
+}
+if (!require("plotrix")) {
+    install.packages("plotrix", dependencies = TRUE)              
+    library("plotrix")
+}
+
+if (!require("grid")) {
+    install.packages("grid")              
+    library("grid")
+}
+if (!require("raster")) {
+    install.packages("raster")              
+    library("raster")
+}
+if (!require("dbscan")) {
+    install.packages("dbscan")              
+    library("dbscan")
+}
+if (!require("pROC")) {
+    install.packages("pROC")              
+    library("pROC")
+}
+if (!require("ggridges")) {
+    install.packages("ggridges")              
+    library("ggridges")
+}
+if (!require("knitr")) {
+    install.packages("knitr")              
+    library("knitr")
+}
+if (!require("GGally")) {
+    install.packages("GGally")              
+    library("GGally")
+}
+if (!require("ggplot2")) {
+    install.packages("ggplot2")              
+    library("gglpot2")
+}
+if (!require("cluster")) {
+    install.packages("cluster")              
+    library("cluster")
+}
+if (!require("kableExtra")) {
+    install.packages("kableExtra", dependencies = TRUE)              
+    library("kableExtra")
+}
+if (!require("forcats")) {
+    install.packages("forcats", dependencies = TRUE)              
+    library("forcats")
+}
+if (!require("rpart")) {
+    install.packages("rpart", dependencies = TRUE)              
+    library("rpart")
+}
+if (!require("rpart.plot")) {
+    install.packages("rpart.plot", dependencies = TRUE)              
+    library("rpart.plot")
+}
+if (!require("metan")) {
+    install.packages("metan", dependencies = TRUE)              
+    library("metan")
+}
+ if (!require("ModelMetrics")) {
+   install.packages("ModelMetrics", dependencies = TRUE)
+   library("ModelMetrics")
+ }
+ if (!require("pander")) {
+   install.packages("pander", dependencies = TRUE)
+   library("pander")
+ }
+
+ if (!require("ggplot2")) {
+   install.packages("ggplot2", dependencies = TRUE)
+   library("ggplot2")
+ }
+
+ if (!require("e1071")) {
+   install.packages("e1071", dependencies = TRUE)
+   library("e1071")
+ }
+ if (!require("presenter")) {
+   install.packages("presenter", dependencies = TRUE)
+   library("presenter")
+ }
+ if (!require("mice")) {
+   install.packages("mice", dependencies = TRUE)
+   library("mice")
+ }
+ if (!require("ggmice")) {
+   install.packages("ggmice", dependencies = TRUE)
+   library("ggmice")
+ }
+if (!require("corrplot")) {
+  install.packages("corrplot", dependencies = TRUE)
+  library("corrplot")
+}
+
+if (!require("caret")) {
+  install.packages("caret", dependencies = TRUE)
+  library("caret")
+}
+
+if (!require("ggpubr")) {
+  install.packages("ggpubr", dependencies = TRUE)
+  library("ggpubr")
+}
+
+if (!require("glmnet")) {
+  install.packages("glmnet", dependencies = TRUE)
+  library("glmnet")
+}
+
+
+knitr::opts_chunk$set(echo = TRUE,       
+                      warning = FALSE,   
+                      result = TRUE,   
+                      message = FALSE,
+                      comment = FALSE,
+                      console = FALSE,
+                      fig.align = 'center')
+
+options(DT.options = list(pageLength = 5, scrollX = TRUE))
+```
+
+# Introduction
+
+Wine, one of the oldest alcoholic beverages known to man, has been theorized to exist as far back in human history as 6,000 BC.  Hailing originally from modern day Georgia, extensive anthropological and archaeological research has linked wine to casual, societal, and religious purposes throughout the duration of human history.  It is no surprise that the wines of today widely vary from the wines of ancient civilizations, but the core principals have remained the same: fermented grapes (about 600-800 <i>per bottle!</i>) [2].  
+
+Jumping to the world of today, wine has remained a staple in human culture and a stronghold in the United States economy.  Clocking in at the number 1 consumer of wine globally according to the National Association of American Wineries, the United States' wine industry reported staggering figures of \$275 billion in 2022 alone bringing in over \$30 billion in taxes annually [2].  As this industry has proven to be a stronghold of the American economy, there is a significant need felt by restaurateurs and wine purveyors to provide clear and accurate predictions on the quality of new wines.  
+
+As wine tasting and ranking is essentially subjective, the researchers at the University of Minho set out to compare expert sommelier rankings to measurable physical characteristics of both red and white wine to mitigate personal bias [1].  This data then allows for creation of prediction models to aid in prediction of a wine's quality ranking without formal sommelier taste testing and subjectivity.  This approach will allow burgeoning wine makers with more limited resources to provide a general quality ranking and assess the potential market value of a newly produced wine.  
+
+Additionally, with the increasing number of wine blends and varying inclusion levels of grape skins in the fermentation process, it has become more difficult to cleanly classify wines as white or red.  Traditionally red wines are created by fermenting grapes with intact skins while white wines are fermented without skins, meanwhile commonly popular blends such as rose are created by utilizing a mixture of both skin on and skinless grapes [3].  Through chemical analysis of wines currently on the market, the data as collected and prepared by Cortez, Cerdeira, et. al. can be leveraged to create a red vs white classification for wines falling in between the traditional categories.  This red vs white prediction can be utilized as a marketing tool by wine makers to provide consumers with a benchmark of wine taste and properties for blend wines, indicating if the flavor and chemical profile is closer to a true red or a true white wine. 
+
+## Data Collection and Details
+
+A total of 6497 wines were sampled (1599 red wines and 4898 white wines) for their chemical composition as well as submitted for sommelier evaluation.  In order to mitigate potential taster bias, a minimum of three (3) sommeliers evaluated each wine on a score of 0 (awful) to 10 (very excellent) and the median evaluation score was utilized [1].  The chemical composition elements examined are included in the below `Table 1` for reference.  Additional details regarding the collection of this data can be found at this <a href = "https://nlepera.github.io/sta552/HW04/data/winequality_names.rtf">link</a>.
+
+
+```{r}
+var.details <- data.frame(
+  Variable = c("Fixed Acidity", "Volatile Acidity", "Citric Acid", "Residual Sugar", "Chlorides", "Free Sulfur Dioxide", "Total Sulfur Dioxide", "Density", "pH", "Sulphates", "Alcohol", "Quality", "Wine Type"),
+  Unit = c("g/dm^3", "g/dm^3", "g/dm^3", "g/dm^3", "g/dm^3", "g/dm^3", "g/dm^3", "g/dm^3", "pH", "g/dm^3", "% of volume", "", ""),
+  Type = c("Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Continuous", "Binary"),
+  Details = c("Concentration of tartaric acid", "Concentration of acetic acid", "Concentration of citric acid", "Concentration of residual sugar after fermentation", "Concentration of sodium chloride", "Concentration of free sulphur dioxide", "Total concentration of sulphur dioxide", "Density of wine", "pH of wine", "Concentration of sulphates", "Alcohol concentration", "Mean wine quality rating (0 to 10)", "Wine type (Red/White)" )
+)
+
+kable(var.details, caption = "Table 1:
+      <br>Wine data variable units, types, and general description") %>% 
+  kable_styling()
+```
+
+
+# Data Preparation
+
+Initially the wine data was stored in separate white wine and red wine data sets.  In order to prepare and utilize this data for analysis the white and red wine data sets were merged, with the creation of a categorical value to capture the type of wine (Red: Type = 0 | White: Type = 1). A cursory review of the merged wine data indicates there are no missing values, therefore imputation is not required for this prediction analysis (`Table 2`).
+
+```{r}
+#read in data
+redwine <- read.csv("https://nlepera.github.io/sta552/HW04/data/winequality-red.csv")
+whitewine <- read.csv("https://nlepera.github.io/sta552/HW04/data/winequality-white.csv")
+
+#set red = 1 / white = 0 pre-merge
+redwine$typef <- as.factor("Red")
+whitewine$typef <- as.factor("White")
+
+#merge red and white wine
+wine <- bind_rows(redwine, whitewine)
+
+#summary table
+kable(summary(wine), align = "l", caption = "Table 2:
+      <br>Summary statistics of wine data.
+      <br>Type: Red = 1 | White = 0") %>% 
+  kable_styling() %>% 
+  scroll_box(width = "100%")
+```
+
+## Exploratory Data Analysis (EDA)
+
+The merged wine data set was then examined to determine the potential for correlation between feature variables. `Figure 1` below provides a visual demonstration of the strength of each correlation between variables, with the circle size and color corresponding to the correlation's magnitude and direction (positive/negative). Calculated pearson correlation coefficient (r) values with an absolute value greater than 0.6 are considered to indicate moderate to strong correlations; a total of four (4) correlations between six (6) unique variables were identified as at least moderate, as captured below in `Figure 2` and `Table 3`. 
+
+```{r, fig.height = 8}
+wine$type <- as.numeric(wine$typef)
+wine$type[wine$type == 2] <- 0
+
+#correlation check
+#create correlation matrix
+cor <- cor(wine[-13])
+
+# plot correlation matrix
+corrplot(cor, type ="upper", order = "hclust", tl.col = "black", tl.srt = 65, diag = T, mar = c(2,1,4,1))
+title(main = "Variable Correlation", sub = "Figure 1:
+Correlation analysis of wine data variables")
+```
+
+```{r}
+#correlation data frame for filtering
+cor2 <- data.frame(
+  row = rownames(cor)[row(cor)],
+  col = colnames(cor)[col(cor)],
+  cor = c(cor)
+  )
+
+#filter for moderate to strong correlation, ignoring correlation = 1 (same variable match)
+corr <- filter(cor2, abs(cor) >= 0.6) %>% filter(abs(cor) != 1) 
+corr$cor <- round(corr$cor, 3)
+corr <- corr[order(corr$cor), ]
+
+cor.al.den <- ggplot(wine, aes(x = alcohol, y = density)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", color = "red", alpha = 0.75) +
+  theme_bw()
+
+cor.tso2.fso2 <- ggplot(wine, aes(x = total.sulfur.dioxide, y = free.sulfur.dioxide)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", color = "red", alpha = 0.75) +
+  xlab("total sulfur dioxide (t.SO2)") +
+  ylab("free sulfur dioxide (f.SO2)") +
+  theme_bw()
+
+cor.ty.vac <- ggplot(wine, aes(x = typef, y = volatile.acidity)) +
+  geom_boxplot(fill = c("red4", "yellow3"), alpha = 0.5) +
+  xlab("type") +
+  ylab("volatile acidity") +
+  theme_bw()
+
+cor.ty.tso2 <- ggplot(wine, aes(x = typef, y = total.sulfur.dioxide)) +
+  geom_boxplot(fill = c("red4", "yellow3"), alpha = 0.5) +
+  xlab("type") +
+  ylab("total sulfur dioxide (t.SO2)") +
+  theme_bw()
+  
+```
+
+
+
+```{r, fig.height=6, out.width="100%"}
+grid.arrange(
+  arrangeGrob(cor.al.den, cor.tso2.fso2, cor.ty.vac, cor.ty.tso2, ncol = 2, nrow = 2),
+  top = textGrob("Pairwise Correlation Plots
+                 ", gp = gpar(fontsize = 18, fontface = "bold")),
+  bottom = textGrob("Figure 2
+  Visualzations of wine data variable correlations where | r | > 0.6"))
+
+#summary table - removed duplicate entries (swapped from v1 to v2)
+kable(corr[c(1,3,5,7),], align = "l", row.names = F, col.names = c("Variable 1 (x)", "Variable 2 (y)", "Correlation"), caption = "Table 3:
+      <br>Moderate to strong variable correlations identified in the merged wine data. Duplicate entries have been removed.") %>% 
+  kable_styling()
+```
+
+The correlated variables as outlined in `Figure 2` and`Table 3` above prove logical and do not require further investigation.
+
+  - Alcohol is known to have a lighter density than water, therefore the negative correlation coefficient between alcohol and density is logical.
+  - Volatile acidity (concentration of acetic acid) is known to have a higher allowable levels in red wines than white wines per the federal Tax and Trade Bureau [4].  As the wine type was coded as 1 = Red and 0 = white this observed negative correlation coefficient is logical.
+  - Red wines are known to have lower total sulfur dioxide concentrations as the tannin present in grape skins assist in stabilization during fermentation, preventing SO2 byproduct formation [5]. As the wine type was coded as 1 = Red and 0 = white this observed positive correlation coefficient is logical.
+  - As total sulfur dioxide measures both the free and reacted sulfur dioxide, the positive correlation coefficient between total and free sulfur dioxide concentrations is logical. 
+
+## Feature Engineering
+
+In order to provide additional dimensions to the regression and SVM analysis feature engineering was performed to create two additional variables: headache and add.  The headache variable was created by taking the product of sulphates concentration and alcohol content as these are the two most common contributers to wine based hangovers.  Secondly the add variable was created by summing the sulphates concentration, chlorides concentration, and the citric acid concentration to get a total additives concentration. Lastly, a variable was created to calculate the ratio of Free Sulphur Dioxide to Total Sulphur Dioxide to omit the correlation between these variables.
+
+```{r}
+#combining alcohol and sulfates for headache potential
+wine$headache <- wine$sulphates * wine$alcohol
+
+#additives 
+wine$add <- wine$sulphates + wine$chlorides + wine$citric.acid
+
+#SO2 ratio
+wine$so2.ratio <- wine$free.sulfur.dioxide / wine$total.sulfur.dioxide
+
+kable(summary(wine[c(14:16)]), align = "c", col.names = c("Headache", "Additives", "Sulfur Dioxide Ratio"), caption = "Table 4:
+      <br>Summary statistics of engineered feature variables.") %>% 
+  kable_styling()
+
+
+headache <- c("Headache", "", "Continuous", "Calculated variable for headache potential (product Sulphates & Alcohol")
+add <- c("Total Additives", "", "Continuous", "Calculated variable for total wine addatives (sum Sulphates, Chlorides, & Citric Acid")
+so2.ratio <- c("Sulpur Dioxide Ratio", "", "Continuous", "Calculated variable for ratio of Free Sulpur Dioxide : Total Sulphur Dioxide")
+
+var.details <- rbind(var.details, headache) %>% rbind(add) %>% rbind(so2.ratio)
+```
+
+# Regularized Linear Regression
+
+In order to predict the median sommelier quality score of wine based off of the chemical properties of a sample, multiple regularized linear regression models were created with quality as the response variable.  Before any prediction models were created, the data was split into 80:20 train:test groups to reduce the potential for over-fitting and to allow for improved hyperparameter tuning. Additionally, once the data was split into training and test groups, the feature variables were standardized to ensure a comparable scale between variables and remove potential over-weighting of variables. 
+
+```{r}
+#regression prep work
+#set seed
+set.seed(129)
+
+#split feature and response variables
+x.linear <- wine[-12]
+y.linear <- wine$quality
+
+#data split for CV (80:20)
+split.linear <- createDataPartition(y.linear, p=0.8, list=F)
+
+#training data
+x.linear.train <- x.linear[split.linear,]
+y.linear.train <- y.linear[split.linear]
+
+#test data
+x.linear.test <- x.linear[-split.linear,]
+y.linear.test <- y.linear[-split.linear]
+
+#standardize values
+std.linear <- preProcess(x.linear.train, method = c("center", "scale"))
+x.linear.train.std <- predict(std.linear, x.linear.train) 
+x.linear.test.std <- predict(std.linear, x.linear.test) 
+
+#drop factor type (typef) as numeric type already included (type)
+x.linear.train.std <- x.linear.train.std[-12]
+x.linear.test.std <- x.linear.test.std[-12]
+```
+
+## Linear Regression Model Builds (LASSO, Ridge, & Elastic Net)
+
+Regularized regression was employed to introduce constraints on the regression coefficients and subsequently reduce over-fitting risk.  The loss function was employed through the <b>glmnet</b> package to ensure appropriate regularized regression with various approaches (LASSO, Ridge, & Elastic Net), utilizing the below equations to complete the model creation.  The LASSO model automatically penalizes variables ultimately resulting in feature selection and a reduced model for use while the Ridge model penalizes variables by reducing impact without feature selection. Meanwhile the Elastic Net model combines these approaches and results in penalized variables with reduced impact and more limited feature selection. 
+
+```{r}
+lasso <- glmnet(x.linear.train.std, y.linear.train, alpha = 1)
+ridge <- glmnet(x.linear.train.std, y.linear.train, alpha = 0)
+enet <- glmnet(x.linear.train.std, y.linear.train, alpha = 0.5)
+```
+
+
+$$
+\begin{align*}
+\underline{\mbox{LOSS Function Equations}} \\ \\
+LOSS_{linear} = \ \sum_{i=1}^n (y_i - \hat y_i) \\
+LOSS_{regularized} = \ LOSS_{linear} +  \lambda  \left[ \frac{1-\alpha}{2} \| \beta \|_{2}^2 + \alpha \| \beta \|_1\right] \ \ &\mbox{where} \ \  \left\{ \begin{array}{rl} \alpha = 1: &\mbox{LASSO} \\ \alpha = 0: &\mbox{Ridge} \\ 0 \leq a \leq 1: &\mbox{Elastic Net} \end{array}\right. \\
+\end{align*}
+$$
+
+$$
+\underline{\mbox{Regularized Regression Equations}}\\
+\begin{array}{l} \\
+L1_{LASSO} &= \ LOSS_{reguarized} &+ \ \ \lambda \sum_{j=1}^k |a_j| \ \ \\
+L2_{ridge} &= \ LOSS_{regularized} &+ \ \ \lambda \sum_{j=1}^k |a_j|^2 \ \  \\
+L3_{Elastic} &= LOSS_{regulatised} &+  \ \ \lambda \sum_{j=1}^k |a_j| + \ \ \lambda \sum_{j=1}^k |a_j|^2 \ 
+\end{array} \  \mbox{where} \ \ \  \left\{ \begin{array}{rl} \alpha = &\mbox{Regression Coeff.} \\ k = &\mbox{# of Feature Vars.}\\ \lambda = &\mbox{Hyperparameter} \end{array} \right.
+$$
+<br>
+
+Hyperparameter $\lambda$ values were subsequently tuned through cross validation as part of the model selection process. More information on $\lambda$ value selection is included below in section <b>3.2.1 Coefficient Path Analysis & Cross Validation</b>
+
+## Linear Model Analysis & Selection
+
+Regression models were created utilizing the predicted regression equation coefficients obtained from the regularized regression equations.  These models were then cross validated and assessed for the best fit $\lambda$ hyperparameter (Lagrange multiplier) before ultimately comparing the models' efficacy and accuracy. 
+
+### Coefficient Path Analysis & λ Selection Through Cross Validation
+
+To determine the best fit number of feature variables for each regression model, 10-fold cross validation was though <b>cv.glmnet()</b> was employed for each model to calculate the range of best fit log(λ) values for use.  The best fit value always lies between the log(λ) that provides minimum cross validated error and the log(λ) that returns error within 1 standard error of the minimum.  Both values were plotted in each coefficient path analysis and cross validation RMSE vs log(λ) plot below in `Figure 3`. The log(λ) within 1 standard error of the minimum (lambda.1se) was chosen to improve model usability and reduce the overall number of feature variables included. 
+
+```{r, fig.width = 10, fig.height = 12}
+
+lasso.cv <- cv.glmnet(as.matrix(x.linear.train.std), y.linear.train, alpha = 1, main = "LASSO")
+ridge.cv <- cv.glmnet(as.matrix(x.linear.train.std), y.linear.train, alpha = 0, main = "Ridge")
+enet.cv <- cv.glmnet(as.matrix(x.linear.train.std), y.linear.train, alpha = 0.5, main = "Elastic Net")
+
+
+par(mfrow = c(3,2), oma=c(6,0,3,0))
+lasso.coef <- plot(lasso, xvar = "lambda", label = T, col = rainbow(15), xlab = "Log(λ)") +
+  abline(v = log(lasso.cv$lambda.min), lty = 4) + 
+  abline(v = log(lasso.cv$lambda.1se), lty = 4, col = "darkred")
+lasso.lam <- plot(lasso.cv)
+
+ridge.coef <- plot(ridge, xvar = "lambda", label = T, col = rainbow(15), xlab = "Log(λ)") + 
+  abline(v = log(ridge.cv$lambda.min), lty = 4) + 
+  abline(v = log(ridge.cv$lambda.1se), lty = 4, col = "darkred")
+ridge.lam <- plot(ridge.cv)
+
+enet.coef <- plot(enet, xvar = "lambda", label = T, col = rainbow(15), xlab = "Log(λ)") + 
+  abline(v = log(enet.cv$lambda.min), lty = 4) + 
+  abline(v = log(enet.cv$lambda.1se), lty = 4, col = "darkred")
+enet.lam <- plot(enet.cv)
+
+mtext("Coefficient Path Analysis & RSME λ Tuning", line = 1, side = 3, outer = T, cex = 1.5, font = 2)
+mtext("LASSO", line = -1.5, side = 3, outer = T, font = 4)
+mtext("Ridge", line = -28.5, side = 3, outer = T, font = 4)
+mtext("Elastic Net", line = -55.5, side = 3, outer = T, font = 4)
+mtext("Figure 3:
+Coefficient path analysis & Root Mean Square Error (RMSE) analysis for λ tuning of each regularized linear regression model.
+Black dotted lines represent the λ min & red dotted lines capture λ 1SE values.
+Top horizonal axis indicates the number of feature variables present with associated log(λ)", line = 3, side = 1, outer = T, cex = 0.8, weight = 1)
+
+```
+
+These visualized cut points (log(λ)) from above `Figure 3` are summarized below in `Table 5`, along with raw λ values. The λ value that retains all error within one standard error of the minimum value (se1_λ) was chosen for utilization in final model creation to allow for a more flexible model with any new potential data.  This will support the wine classification model in retaining adaptivity to new incoming data.  This will reduce the need for more frequent model rebuilds and re-tunes. 
+
+
+```{r}
+coef.lin <- data.frame(
+  lin.gamma = c("Min_λ", "se1_λ", "Min_logλ", "se1_logλ"),
+  lasso = c(lasso.cv$lambda.min, lasso.cv$lambda.1se, log(lasso.cv$lambda.min), log(lasso.cv$lambda.1se)),
+  ridge = c(ridge.cv$lambda.min, ridge.cv$lambda.1se, log(ridge.cv$lambda.min), log(ridge.cv$lambda.1se)),
+  enet = c(enet.cv$lambda.min, enet.cv$lambda.1se, log(enet.cv$lambda.min), log(enet.cv$lambda.1se))
+  )
+
+kable(coef.lin, col.names = c("λ Value Type", "LASSO", "Ridge", "Elastic Net"), caption = "Table 5:
+      <br>Cross validated λ & log(λ) values for each regularized logistic regression model. Min_λ & se1_λ represent the λ value with minimal cross validated error & λ value with error within 1 standard error of the minimum respectively.  Min_logλ & se1_logλ are the log() of Min_λ & se1_λ respectively.", align = c("l", "c", "c", "c")) %>% 
+  kable_styling()
+```
+## Model Selection
+
+With the best fit log(λ) chosen as the lambda.1se values, the regression models were re-run on the test data with a fixed log(λ) value to assess the model performance.  As illustrated below in `Table 6` the elastic net model produced the lowest RMSE and the lowest RMSE % of the range of y test values for quality indicating this is the best fit model.  While all models' RMSE values were within 10-20% of the range of the y test values for quality, choosing the lowest RMSE and RMSE % of range of y test will result in the most accurate prediction models.   
+
+```{r}
+#model predict test data using model coefficients & lambda.1se from CV tuning & RMSE calculation
+#lasso
+lasso.model <- glmnet(x.linear.train.std, y.linear.train, alpha = 1, lambda = lasso.cv$lambda.1se)
+lasso.pred <- round(predict(lasso.model, s = lasso.cv$lambda.1se, newx = as.matrix(x.linear.test.std)),0)
+lasso.rmse <- rmse(y.linear.test, lasso.pred)
+lasso.rmse.norm <- round((lasso.rmse/(max(y.linear.test)-min(y.linear.test)))*100,2)
+
+#ridge
+ridge.model <- glmnet(x.linear.train.std, y.linear.train, alpha = 0, lambda = ridge.cv$lambda.1se)
+ridge.pred <- round(predict(ridge.model, s = ridge.cv$lambda.1se, newx = as.matrix(x.linear.test.std)),0)
+ridge.rmse <- rmse(y.linear.test, ridge.pred)
+ridge.rmse.norm <- round((ridge.rmse/(max(y.linear.test)-min(y.linear.test)))*100,2)
+
+#elastic net
+enet.model <- glmnet(x.linear.train.std, y.linear.train, alpha = 0.5, lambda = enet.cv$lambda.1se)
+enet.pred <- round(predict(enet.model, s = enet.cv$lambda.1se, newx = as.matrix(x.linear.test.std)),0)
+enet.rmse <- rmse(y.linear.test, enet.pred)
+enet.rmse.norm <- round((enet.rmse/(max(y.linear.test)-min(y.linear.test)))*100,2)
+
+#join RMSE vals for kable display
+RMSE <- data.frame(
+  Model = c("LASSO", "Ridge", "ElasticNet"),
+  RMSE = c(lasso.rmse, ridge.rmse, enet.rmse),
+  RMSE.norm = c(lasso.rmse.norm, ridge.rmse.norm, enet.rmse.norm),
+  eval = c("Good", "Good", "Good") #manually calculated for this but can be sent through for loop to auto calc
+)
+
+kable(RMSE, align = c("l","c","c","c"), col.names = c("Model", "RMSE", "RMSE % of Range of Test Quality Values", "Intepretation"), caption = "Table 6:
+      <br>Root Mean Square Error (RMSE) values, calculated percent of target range captured by RMSE, and the model evaluation for regularized linear regression models to utilize for model selection.") %>% 
+  kable_styling()
+```
+
+Once selected, the elastic net regression equation coefficients were obtained (`Table 7` below) to create the final regression equation as presented below.
+
+```{r}
+#extracting regression equation coefficients
+enet.coef <- as.data.frame(as.matrix(coef(enet.cv, enet.cv$lambda.1se))) %>% subset(s1 != 0)
+
+kable(enet.coef, align = "c", col.names = c("Variable", "Regression Coefficient"), caption = "Table 7:
+      <br>Regression coefficients for selected regularized regression model: Elastic Net") %>% 
+  kable_styling()
+
+```
+
+$$
+\begin{align*}
+\hat{y}_{Elastic Net} = &5.818 - 0.200 * \mbox{Volatile Acidity} + 0.039 * \mbox{Residual Sugar} - \\
+&0.003 * \mbox{Chlorides} + 0.336 * \mbox{Alcohol} + 0.046 * Headache + \\
+&0.070 * \mbox{Sulphur Dioxide Ratio}
+\end{align*}
+$$
+
+# Regularized Logistic Regression
+
+In order to predict the type (red/white) of wine based off of the chemical properties of a sample, multiple regularized logistic regression models were created with type as the response variable.  Before any prediction models were created, the data was split into 80:20 train:test groups to reduce the potential for over-fitting and to allow for improved hyperparameter tuning. Additionally, once the data was split into training and test groups, the feature variables were standardized to ensure a comparable scale between variables and remove potential over-weighting of variables. 
+
+```{r}
+#regression prep work
+#set seed
+set.seed(12935)
+
+#split feature and response variables
+x.log <- wine[-c(13:14)]
+y.log <- wine$type
+
+
+#data split for CV (80:20)
+split.log <- createDataPartition(y.linear, p=0.8, list=F)
+
+#training data
+x.log.train <- x.log[split.log,]
+y.log.train <- y.log[split.log]
+
+#test data
+x.log.test <- x.log[-split.log,]
+y.log.test <- y.log[-split.log]
+
+#standardize values
+std.log <- preProcess(x.log.train, method = c("center", "scale"))
+x.log.train.std <- predict(std.log, x.log.train) 
+x.log.test.std <- predict(std.log, x.log.test) 
+
+```
+
+## Logistic Regression Model Builds
+
+Regularized regression was employed to introduce constraints on the regression coefficients and subsequently reduce over-fitting risk.  The loss function was employed through the <b>glmnet</b> package to ensure appropriate regularized regression with various approaches (LASSO, Ridge, & Elastic Net), utilizing the below equations to complete the model creation.  The LASSO model automatically penalizes variables ultimately resulting in feature selection and a reduced model for use while the Ridge model penalizes variables by reducing impact without feature selection. Meanwhile the Elastic Net model combines these approaches and results in penalized variables with reduced impact and more limited feature selection. 
+
+```{r}
+lasso.log <- glmnet(x.log.train.std, y.log.train, alpha = 1, family = "binomial")
+ridge.log <- glmnet(x.log.train.std, y.log.train, alpha = 0, family = "binomial")
+enet.log <- glmnet(x.log.train.std, y.log.train, alpha = 0.5, family = "binomial")
+```
+
+
+$$
+\begin{align*}
+\underline{\mbox{LOSS Function Equations}} \\ \\
+LOSS_{logistic} = \ -\frac{1}{n} \sum_{i=1}^n \ [\ y_i\log(\hat{p}_i) + (1-y_{i})\log(1-\hat p_i)\ ] \\
+LOSS_{regularized} = \ LOSS_{logistic} +  \lambda  \left[ \frac{1-\alpha}{2} \| \beta \|_{2}^2 + \alpha \| \beta \|_1\right] \ \ &\mbox{where} \ \  \left\{ \begin{array}{rl} \alpha = 1: &\mbox{LASSO} \\ \alpha = 0: &\mbox{Ridge} \\ 0 \leq a \leq 1: &\mbox{Elastic Net} \end{array}\right. \\
+\end{align*}
+$$
+
+$$
+\underline{\mbox{Regularized Regression Equations}}\\
+\begin{array}{l} \\
+L1_{LASSO} &= \ LOSS_{reguarized} &+ \ \ \gamma \sum_{j=1}^k |\beta_j| \ \ \\
+L2_{ridge} &= \ LOSS_{regularized} &+ \ \ \gamma \sum_{j=1}^k |\beta_j|^2 \ \  \\
+L3_{Elastic} &= LOSS_{regulatised} &+  \ \ \gamma \sum_{j=1}^k |\beta_j| + \ \ \gamma \sum_{j=1}^k |\beta_j|^2 \ 
+\end{array} \  \mbox{where} \ \ \  \left\{ \begin{array}{rl} \beta = &\mbox{Regression Coeff.} \\ k = &\mbox{# of Feature Vars.}\\ \gamma = &\mbox{Hyperparameter} \end{array} \right.
+$$
+<br>
+
+Hyperparameter $\gamma$ values were subsequently tuned through cross validation as part of the model selection process. More information on $\gamma$ value selection is included below in section <b>4.2.1 Coefficient Path Analysis & Cross Validation</b>
+
+## Logistic Model Analysis & Parameter Value Selection
+
+Regression models were created utilizing the predicted regression equation coefficients obtained from the regularized regression equations.  These models were then cross validated and assessed for the best fit $\gamma$ hyperparameter (Lagrange multiplier) before ultimately comparing the models' efficacy and accuracy. 
+
+### Coefficient Path Analysis & γ Selection Through Cross Validation
+
+To determine the best fit number of feature variables for each regression model, 10-fold cross validation was though <b>cv.glmnet()</b> was employed for each model to calculate the range of best fit log($\gamma$) values for use.  The best fit value always lies between the log($\gamma$) that provides minimum cross validated error and the log($\gamma$) that returns error within 1 standard error of the minimum.  Both values were plotted in each coefficient path analysis and cross validation RMSE vs log($\gamma$) plot below in `Figure 4`. The log($\gamma$) within 1 standard error of the minimum (gamma.1se) was chosen to improve model usability and reduce the overall number of feature variables included. 
+
+```{r}
+
+lasso.log.cv <- cv.glmnet(as.matrix(x.log.train.std), y.log.train, alpha = 1, family = "binomial", main = "LASSO")
+ridge.log.cv <- cv.glmnet(as.matrix(x.log.train.std), y.log.train, alpha = 0, family = "binomial", main = "Ridge")
+enet.log.cv <- cv.glmnet(as.matrix(x.log.train.std), y.log.train, alpha = 0.5, family = "binomial", main = "Elastic Net")
+```
+
+```{r, fig.width = 10, fig.height = 12}
+par(mfrow = c(3,2), oma=c(6,0,3,0))
+lasso.log.coef <- plot(lasso.log, xvar = "lambda", label = T, col = rainbow(15), xlab = "Log(γ)") +
+  abline(v = log(lasso.log.cv$lambda.min), lty = 4) + 
+  abline(v = log(lasso.log.cv$lambda.1se), lty = 4, col = "darkred")
+lasso.log.lam <- plot(lasso.log.cv, xlab = "Log(γ)")
+
+ridge.log.coef <- plot(ridge.log, xvar = "lambda", label = T, col = rainbow(15), xlab = "Log(γ)") + 
+  abline(v = log(ridge.log.cv$lambda.min), lty = 4) + 
+  abline(v = log(ridge.log.cv$lambda.1se), lty = 4, col = "darkred")
+ridge.log.lam <- plot(ridge.log.cv, xlab = "Log(γ)")
+
+enet.log.coef <- plot(enet.log, xvar = "lambda", label = T, col = rainbow(15), xlab = "Log(γ)") + 
+  abline(v = log(enet.log.cv$lambda.min), lty = 4) + 
+  abline(v = log(enet.log.cv$lambda.1se), lty = 4, col = "darkred")
+enet.log.lam <- plot(enet.log.cv, xlab = "Log(γ)")
+
+mtext("Coefficient Path Analysis & Model Fit γ Tuning", line = 1, side = 3, outer = T, cex = 1.5, font = 2)
+mtext("LASSO", line = -1.5, side = 3, outer = T, font = 4)
+mtext("Ridge", line = -28.5, side = 3, outer = T, font = 4)
+mtext("Elastic Net", line = -55.5, side = 3, outer = T, font = 4)
+mtext("Figure 4:
+Coefficient path analysis & binomial deviance analysis for γ tuning of each regularized logarithmic regression model.
+Black dotted lines represent the γ min & red dotted lines capture γ 1SE values.
+Top horizonal axis indicates the number of feature variables present with associated log(γ)", line = 3, side = 1, outer = T, cex = 0.8, weight = 1)
+
+```
+
+These visualized cut points (log(γ)) from above `Figure 4` are summarized below in `Table 8`, along with raw γ values. The γ value that retains all error within one standard error of the minimum value (se1_γ) was chosen for utilization in final model creation to allow for a more flexible model with any new potential data.  This will support the wine classification model in retaining adaptivity to new incoming data.  This will reduce the need for more frequent model rebuilds and re-tunes. 
+
+
+```{r}
+coef.log <- data.frame(
+  log.gamma = c("Min_γ", "se1_γ", "Min_logγ", "se1_logγ"),
+  lasso = c(lasso.log.cv$lambda.min, lasso.log.cv$lambda.1se, log(lasso.log.cv$lambda.min), log(lasso.log.cv$lambda.1se)),
+  ridge = c(ridge.log.cv$lambda.min, ridge.log.cv$lambda.1se, log(ridge.log.cv$lambda.min), log(ridge.log.cv$lambda.1se)),
+  enet = c(enet.log.cv$lambda.min, enet.log.cv$lambda.1se, log(enet.log.cv$lambda.min), log(enet.log.cv$lambda.1se))
+  )
+
+kable(coef.log, col.names = c("γ Value Type", "LASSO", "Ridge", "Elastic Net"),align = c("l", "c", "c", "c"), caption = "Table 8:
+      <br>Cross validated γ & log(γ) values for each regularized logistic regression model. Min_γ & se1_γ represent the γ value with minimal cross validated error & γ value with error within 1 standard error of the minimum respectively.  Min_logγ & se1_logγ are the log() of Min_γ & se1_γ respectively.") %>% 
+  kable_styling()
+```
+
+### Cut-off Probability Value Selection
+
+To properly fine tune the regularized logistic regression prediction model, the optimal probability cutoff must be selected in addition to the Lagrange multiplier (γ). This value serves as the cut off point for when the prediction model will predict a wine type of red.  In order to get the most accurate predictions, this cutoff value must be carefully selected. All three models were held at a standard probability of $\alpha = 0.5$ and predicted probabilities were collected. Then these predicted probabilities were classified as white or red repeatedly based on 100 different cut off probabilities from 0 to 1 (increments of 0.01).  The accuracy rates (rate at which the cut off point & prediction model successfully classified a red wine as a red and a white wine as a white) for each model were calculated at each of these 100 points. 
+
+The below `Figure 5` provides an interactive insight into these 100 probability cut off value and accuracy rate pairings:  
+
+```{r}
+#model predict test data using model coefficients & lambda.1se from CV tuning & RMSE calculation
+#lasso
+lasso.log.model <- glmnet(x.log.train.std, y.log.train, alpha = 1, family = "binomial", lambda = lasso.log.cv$lambda.1se)
+lasso.log.pred <- predict(lasso.log.model, s = lasso.log.cv$lambda.1se, newx = as.matrix(x.log.test.std), type = "response")
+
+
+#ridge
+ridge.log.model <- glmnet(x.log.train.std, y.log.train, alpha = 0, family = "binomial", lambda = ridge.log.cv$lambda.1se)
+ridge.log.pred <- predict(ridge.log.model, s = ridge.log.cv$lambda.1se, newx = as.matrix(x.log.test.std), type = "response")
+
+
+#elastic net
+enet.log.model <- glmnet(x.log.train.std, y.log.train, alpha = 0.5, family = "binomial", lambda = enet.log.cv$lambda.1se)
+enet.log.pred <- predict(enet.log.model, s = enet.log.cv$lambda.1se, newx = as.matrix(x.log.test.std), type = "response")
+
+```
+
+```{r}
+##### running through with probability cutoff of 0.5 (α = 0.5) to test accuracy to then to select better α value
+#set sequence
+seq.ac <- seq(0,1, length = 100)
+ac.lasso <- NULL
+ac.ridge <- NULL
+ac.enet <- NULL
+
+#for loop to run through all threshold levels and transform probs into outcomes (Red/White) based on threshold
+for (i in 1:length(seq.ac)){
+  y.p.lasso <- ifelse(lasso.log.pred > seq.ac[i], 1 , 0)
+  y.p.ridge <- ifelse(ridge.log.pred > seq.ac[i], 1 , 0)
+  y.p.enet <- ifelse(lasso.log.pred > seq.ac[i], 1 , 0)
+  ac.lasso[i] <- mean(y.log.test == y.p.lasso)
+  ac.ridge[i] <- mean(y.log.test == y.p.ridge)
+  ac.enet[i] <- mean(y.log.test == y.p.enet)
+}
+
+#create max accuracy cutoffs, mean included in the event more than one cutoff with max accuracy
+cut.lasso <- mean(seq.ac[which(ac.lasso==max(ac.lasso))])
+cut.ridge <- mean(seq.ac[which(ac.ridge==max(ac.ridge))])
+cut.enet <- mean(seq.ac[which(ac.enet==max(ac.enet))])
+
+#merge for plotting
+ac.log.all <- data.frame(
+  prob = rep(seq.ac,3),
+  accuracy = c(ac.lasso, ac.ridge, ac.enet),
+  group = c(rep("lasso", 100), rep("ridge", 100), rep("elastic", 100))
+)
+```
+
+```{r}
+#ac.log.el <- ac.log.all %>% subset(group == "elastic")
+  
+ac.log.plot <- ggplot(ac.log.all, aes(x = prob, y = accuracy, color = group, lty = group)) +
+  geom_line() +
+  labs(title = "Model Prediction Accuracy vs. Cut-off Probability", x= "Cut-off Probability", y="Accuracy", color = "Model", lty = "")
+
+ggplotly(ac.log.plot)
+```
+<font class = "figlabel"> Figure 5:
+An interactive visualization of the three logistic models' prediction accuracy when utilizing cut-off probabilities from 0 to 1 (increments of 0.01). Hover over any point in the graph for accuracy and α values.</font>
+
+
+These 100 pairings for each model were then analyzed to identify the associated probability cut off that resulted in the maximum accuracy.  The below `Table 9` summarizes these maximum accuracy & associated probability cut off pairings for the LASSO, Ridge, and Elastic Net regularized logistic regression prediction models. The below outlined cut-off probabilities will be utilized for all subsequent analysis of the LASSO, Ridge, and Elastic Net logistic regression models in this report.
+
+```{r}
+cut.max <- data.frame(
+  val = c("Cut_Off_Prob", "Max_Accuracy"),
+  lasso = c(cut.lasso, max(ac.lasso)),
+  ridge = c(cut.ridge, max(ac.ridge)),
+  enet = c(cut.enet, max(ac.enet))
+)
+
+kable(cut.max , col.names = c("", "LASSO", "Ridge", "Elastic Net"), align = c("l", "c","c","c"), digits = 3, caption ="Table 9:
+      <br>Cut-off probabilities to use with logistic regression model to maximize prediction accuracy of wine type.") %>% 
+  kable_styling()
+```
+
+## Model Selection
+
+Utilizing the calculated best cut-off probability values the Receiver Operating Characteristics (ROC) curve was plotted along with the predicted best fit threshold points as calculated above in `Table 9`.  Due to the high level of model tuning with calculating the best fit γ and the best fit cut-off probability, the models appear to be over-fitted despite incorporating the LOSS functions.  As demonstrated below in `Figure 6`, the ROC curves are near perfect right angles, with Area Under the Curve (AUC) values incredibly close to 1.  This indicates the model is likely over fitted and there is a potential for this model to not adapt well to future data for accurate predictions.
+
+```{r, fig.width = 8, fig.height = 8, out.width="100%",warning=FALSE,message=FALSE,error=FALSE, results='hide'}
+
+#ROC creation roc(response, predictor, calculated best probability cutoffs)
+ROC.lasso <- roc(y.log.test, lasso.log.pred)
+ROC.ridge <- roc(y.log.test, ridge.log.pred)
+ROC.enet <- roc(y.log.test, enet.log.pred)
+
+#pull sensitivites and 1-specificity for easy ref
+lasso.sn <- ROC.lasso$sensitivities
+lasso.sp <- 1-ROC.lasso$specificities
+ridge.sn <- ROC.ridge$sensitivities
+ridge.sp <- 1-ROC.ridge$specificities
+enet.sn <- ROC.enet$sensitivities
+enet.sp <- 1-ROC.enet$specificities
+
+#get ROC plot coordinates for best fit cut off probability values prev calculated (threshold)
+lasso.cp <- coords(ROC.lasso, x = cut.lasso, input = "threshold", ret = c("threshold", "sensitivity", "specificity"))
+ridge.cp <- coords(ROC.ridge, x = cut.ridge, input = "threshold", ret = c("threshold", "sensitivity", "specificity"))
+enet.cp <- coords(ROC.enet, x = cut.enet, input = "threshold", ret = c("threshold", "sensitivity", "specificity"))
+
+#plot ROC curves and threshold values
+par(oma = c(6,2,2,2),  cex.main = 2)
+plot(lasso.sp, lasso.sn, type = "l", xlim=c(0,1), xlab="1 - Specificity (False Positive)" , ylim=c(0,1), ylab = "Sensitivity (True Positive)", main = "ROC Curve Comparrisons", col = "darkviolet", lwd=2) +
+  abline(0,1, lty=2, col = "darkred", lwd=1) +
+  lines(ridge.sp, ridge.sn, col = "blue3", lty = 2, lwd =2) +
+  lines(enet.sp, enet.sn, col = "coral3", lty = 3, lwd=2) +
+  points((1-lasso.cp[1,3]), lasso.cp[1,2], pch = 23, col = "darkviolet", cex =2) +
+  points((1-ridge.cp[1,3]), ridge.cp[1,2], pch = 21, col = "blue3", cex = 2) +
+  points((1-enet.cp[1,3]), enet.cp[1,2], pch = 22, col = "coral3", cex = 2) 
+  legend("bottomright", c(paste("LASSO  AUC =", round(ROC.lasso$auc,4)),
+                          paste("Ridge   AUC =", round(ROC.ridge$auc, 4)),
+                          paste("E.Net    AUC =", round(ROC.enet$auc, 4))),
+         col = c("darkviolet", "blue3", "coral3"),
+         lwd = 2, lty=1, cex = 0.8, bty="o")
+  title(sub = "Figure 6:
+  Comparrison of ROC and AUC values for each logistic regression prediction model
+  Calculated best fit thresholds (γ) indicated on the plot.", outer = T, line=2)
+
+```
+
+While the models appear to be over fitted, based on the analysis outputs as captured below in `Table 10` the <b>LASSO</b> model proves to be the best fit regularized logistic regression prediction model for accurately predicting a wine's type (Red/White) based on chemical composition.  This model was selected as while all models returned an AUC value of near 1, the LASSO model returned the lowest false positive rate (1 - Sensitivity).  In order to reduce the likely overfitting, the cut-off probability and/or the Lagrange multiplier. 
+
+```{r}
+#table of ROC curve stats for each model
+cutoffs <- data.frame(
+  Model = c("LASSO", "Ridge", "E.Net"),
+  CutOff = c(cut.lasso, cut.ridge, cut.enet),
+  Sens = c(lasso.cp[1,2], ridge.cp[1,2], enet.cp[1,2]),
+  Spec = c((1-lasso.cp[1,3]), (1-ridge.cp[1,3]), (1-enet.cp[1,3])),
+  AUC = c(ROC.lasso$auc, ROC.ridge$auc, ROC.enet$auc)
+) 
+
+kable(cutoffs, digits = 5, align = c("l","c","c","c","c"), col.names = c("Model", "Cut Off Probability", "Sensitivity (True Postivie)", "1-Specificity (False Positive)", "Model AUC"), caption = "Table 10:
+      <br>Final regularized regression model analysis outputs.") %>% 
+  kable_styling()
+
+
+
+pred.lasso.gamma <- ifelse(lasso.log.pred > cut.lasso, 1, 0)
+pred.lasso.gamma <- as.factor(pred.lasso.gamma)
+y.log.tst.f <- as.factor(y.log.test)
+
+lasso.conf <- confusionMatrix(pred.lasso.gamma, y.log.tst.f)
+
+log.ac <- (lasso.conf$table[1,1] + lasso.conf$table[2,2])/sum(lasso.conf$table)
+log.prec <- (lasso.conf$table[1,1])/(lasso.conf$table[1,1]+lasso.conf$table[1,2])
+log.rec <- (lasso.conf$table[1,1])/(lasso.conf$table[1,1]+lasso.conf$table[2,1])
+
+log.eval <- data.frame(
+  Accuracy = log.ac,
+  Precision = log.prec,
+  Recall = log.rec
+)
+
+kable(log.eval, align = "c", caption = "Table 11:
+      <br>Evaluation of of regularized logistic regression LASSO model (red vs white)") %>% 
+  kable_styling()
+```
+
+
+Once selected, the LASSO regression equation coefficients were obtained (`Table 12` below) to create the final regularized logistic regression equation.
+
+```{r}
+#extracting regression equation coefficients
+lasso.log.coef <- as.data.frame(as.matrix(coef(enet.log.cv, enet.log.cv$lambda.1se))) %>% subset(s1 != 0)
+
+kable(lasso.log.coef, align = "c", col.names = c("Variable", "Regression Coefficient"), caption = "Table 12:
+      <br>Regression coefficients for selected regularized regression model: Elastic Net") %>% 
+  kable_styling()
+
+```
+
+
+
+# Support Vector Machine (SVM) Analysis
+
+In order to create more future proof prediction models, support vector machine (SVM) classification and regression models were created in addition to the regularized logistic and linear regression models previously explored. 
+
+Rather than relying on a traditional regression model to predict a binary outcome (ex: is a wine red or white?), SVM classification sets out to identify a hyperplane that maximizes the margins between the two classes (red/white). The SVM C-classification model was run on an 80:20 train:test split. To note the 80:20 split data did not undergo standardization, as standardization is not required for SVM based classification. Cross validation was tuned to utilize 5-fold validation with 0 repetitions.  Repeated cross-validation can be employed should the available database grow, but with the current size of the data set available, introducing repeated cross validation will likely lead to overfitting.
+
+
+## SVM Classification vs Regularized Logistic Regression
+
+As the SVM C-classification model was employed with the RBF kernel (radial), both the cost (C) and curvature ($\gamma$) hyperparameters required tuning before proper use.  A grid search was employed to identify the best fit hyperparameter values utilizing the <b>tune()</b> package.  These best fit values for C and $\gamma$ were then fed back into the SVM C-classification as fixed C and $\gamma$ values to create the final SVM C-classification model.  Predictions were then generated (`Table 13`) and utilized to calculate the accuracy, precision, and recall (sensitivity) of the model, as captured below in `Table 14`.
+
+
+```{r}
+#split data
+wine.svm <- wine[-14]
+set.seed(1236895)
+svm.split <- sample(1:nrow(wine.svm), 0.8*nrow(wine.svm), replace = F)
+train.svm <- wine.svm[svm.split,]
+test.svm <- wine.svm[-svm.split,]
+```
+
+```{r}
+#set up CV control
+cv.cont.class <- tune.control(cross = 5, nrepeat = 1)
+
+hp.class <- tune(svm, typef ~., data = train.svm, 
+                 kernel = "radial", 
+                 ranges = list(cost = 10^(-1:2), gamma = c(0.1, 0.5, 1, 2)),
+                 tunecontrol = cv.cont.class)
+```
+
+```{r}
+class.model <- hp.class$best.model
+class.cost <- class.model$cost
+class.gamma <- class.model$gamma
+
+class.train <- svm(typef ~ ., train.svm, kernel = "radial", cost = class.cost, gamma = class.gamma)
+
+class.pred <- predict(class.train, test.svm, type = "class")
+
+class.conf <- table(Predicted = class.pred, Actual = test.svm$type)
+
+kable(class.conf, col.names = c("Predicted Type", "Actual Red", "Actual White"), align = c("c", "c", "c"), caption="Table 13:
+      <br>Confusion matrix for SVM classification of wine (red/white)") %>% 
+  kable_styling()
+
+class.ac <- (class.conf[1,1] + class.conf[2,2])/sum(class.conf)
+class.prec <- (class.conf[1,1])/(class.conf[1,1]+class.conf[1,2])
+class.rec <- (class.conf[1,1])/(class.conf[1,1]+class.conf[2,1])
+
+classlog.eval <- data.frame(
+  Model = c("LASSO", "SVM C-classification"),
+  Accuracy = c(log.ac ,class.ac),
+  Precision = c(log.prec, class.prec),
+  Recall = c(log.rec, class.rec)
+)
+
+kable(classlog.eval, align = "c", caption = "Table 14:
+      <br>Evaluation of of SVM C-classifciation model (red vs white) compared to the regularized linear regression LASSO model") %>% 
+  kable_styling()
+```
+
+While the above `Table 14` demonstrates the LASSO model had slightly better values for all three evaluation parameters, the SVM C-classification prediction model is likely a better fit for predicting wine type (red/white) based on chemical composition due to the nature of the model creation process.  As the SVM C-classification model can be rapidly tuned on the current data, this prediction model will allow for increased longevity in prediction capabilities.  The SVM model will require fewer re-visits to ensure the model remains the best fit to the current data parameters, with slightly less potential over fitting.  As wines change and evolve, this SVM C-classification prediction model will evolve in the same way.
+
+```{r}
+#transform to numerif from factor and fix white = 0 bc as.factor puts white = 2
+test.svm$typef <- as.numeric(test.svm$typef)
+test.svm$typef[test.svm$typef == 2] <- 0
+
+class.pred1 <- as.numeric(class.pred)
+class.pred1[class.pred == 2] <- 0
+
+#transform from list to data frame and ensure column name is match
+class.pred1 <- as.data.frame(class.pred1) %>% rename(typef = class.pred1)
+```
+
+```{r, fig.width = 8, fig.height = 8, out.width="100%",warning=FALSE,message=FALSE,error=FALSE, results='hide'}
+#create ROC 
+roc.svm <- roc(test.svm$typef, class.pred1$typef)
+
+#pull sens-spes
+svm.sn <- roc.svm$sensitivities
+svm.sp <- 1-roc.svm$specificities
+
+#optimal cut point
+svm.cp <- coords(roc.svm, "best", ret = c("threshold", "sensitivity", "specificity"))
+
+#plot ROC curves and threshold values
+par(oma = c(6,2,2,2),  cex.main = 2)
+plot(svm.sp, svm.sn, type = "l", xlim=c(0,1), xlab="1 - Specificity (False Positive)" , ylim=c(0,1), ylab = "Sensitivity (True Positive)", main = "ROC Curve Comparrisons", col = "darkviolet", lwd=2) +
+  lines(lasso.sp, lasso.sn, col = "blue3", lwd = 2, lty = 3) +
+  points((1-svm.cp[1,3]), svm.cp[1,2], pch = 23, col = "darkviolet", cex =2) +
+  points((1-ridge.cp[1,3]), ridge.cp[1,2], pch = 21, col = "blue3", cex = 2) 
+  legend("bottomright", c(paste("SVM       AUC =", round(roc.svm$auc,4)),
+                          paste("LASSO   AUC =", round(ROC.lasso$auc, 4))),
+         col = c("darkviolet", "blue3"),
+         lwd = 2, lty=1, cex = 0.8, bty="o")
+  title(sub = "Figure 7:
+  Comparrison of ROC and AUC values for the SVM C-classification 
+  prediction model and the regularized logistic regression prediction model
+  Calculated best fit thresholds (γ) indicated on the plot.", outer = T, line=2)
+
+
+```
+
+Similar to the LASSO model, the SVM C-classification prediction model appears to demonstrate over-fitting based on the near perfect square shape of the ROC curve in `Figure 7` and AUC value incredibly close to 1.  In contrast to the LASSO model this appearance of over-fitting is less concerning for model longevity in the SVM C-classification model due to the model building process.  As the SVM C-class model will continuously re-tune the selection hyperarameters and identify new hyperplanes to accurately classify wine types based on newly available data, the regression coefficients will require manual re-tuning after the introduction of enough new data. Therefore the SVM C-classification model will prove to be a more cost effective prediction model when seeking to determine wine type (red/white) based on wine chemical composition. 
+
+## SVM Regression (SVR) vs Regularized Linear Regression
+
+In order to allow for increased future data flexibility in the prediction model, an SVM regression model was created to allow for sommelier quality prediction while minimizing model complexity and error tolerance. This increased error tolerance as captured by $\epsilon$ allows for improved prediction output after introduction of new wine data without requiring re-tuning of the regression coefficients resulting in improved longevity and decreased cost. 
+
+As the SVR model was employed with the RBF kernel (radial), the cost (C), curvature ($\gamma$), and the control error ($\epsilon$) hyperparameters required tuning before proper use.  A grid search was employed to identify the best fit hyperparameter values utilizing the <b>tune()</b> package.  These best fit values for C, $\gamma$. and $\epsilon$ were then fed back into the SVR model as fixed C, $\gamma$, and $\epsilon$ values to create the final SVR model.  Predictions were then generated (`Table 15`) and utilized to calculate the mean square error (MSE) and mean absolute error (MAE) for comparison against the regularized linear regression prediction model, as captured below in `Table 15`.
+
+
+```{r}
+wine.svr <- wine[-13]
+svr.x <- wine.svr[, -12]
+svr.y <- wine.svr[,12]
+
+set.seed(123856)
+train.svr <- sample(1:nrow(wine.svr), 0.8*nrow(wine.svr))
+x.train <- svr.x[train.svr, ]
+x.test <- svr.x[-train.svr, ]
+y.train <- svr.y[train.svr]
+y.test <- svr.y[-train.svr]
+
+tune.svr <- tune.control(cross = 5, nrepeat = 1)
+
+hp.svr <- tune(svm, x.train, y.train,
+               ranges = list(epsilon = seq(0.1, 0.5, 1.0),
+                             cost = c(1, 10, 100),
+                             gamma = c(0.01, 0.1, 1)),
+               tunecontrol = tune.svr)
+```
+
+```{r}
+final.svr <- svm(x.train, y.train,
+                 type = "eps-regression",
+                 kernel = "radial",
+                 epsilon = hp.svr$best.parameters$epsilon,
+                 cost = hp.svr$best.parameters$cost,
+                 gamma = hp.svr$best.parameters$gamma)
+
+svr.pred <- round(predict(final.svr, x.test),0)
+svr.conf <- table(Predicted = svr.pred, Actual = y.test)
+
+mse.svr <- mean((y.test - svr.pred)**2)
+mae.svr <- mean(abs(y.test - svr.pred))
+rsqr.svr <- (cor(y.test, svr.pred))**2
+
+mse.enet <- mean((y.linear.test - enet.pred)**2)
+mae.enet <- mean(abs(y.linear.test - enet.pred))
+rsqr.enet <- (cor(y.linear.test, enet.pred))**2
+
+mse.mae <- data.frame(
+  Statistic = c("MSE", "MAE", "R.Squared"),
+  SVR = c(mse.svr, mae.svr, rsqr.svr),
+  E.Net = c(mse.enet, mae.enet, rsqr.enet)
+)
+
+kable(svr.conf, col.names = c("Predicted Quality Rank", "Actual 3", "Actual 4", "Actual 5", "Actual 6", "Actual 7", "Actual 8", "Actual 9"), align = "c", caption="Table 15:
+      <br>Confusion matrix for SVR prediction of median sommelier quality ranking (0 to 10 whole numbers only)") %>% 
+  kable_styling()
+
+
+kable(mse.mae, align = c("l", "c" , "c"), caption = "Table 16:
+      <br>Comparrison of Mean Square Error (MSE) and Mean Absolute Error (MAE) values from SVR prediction model and regularized linear regression prediction model.", col.names = c("Statistic", "SVM Regression", "Elasic Net Linear Regression")) %>% 
+  kable_styling()
+```
+
+As demonstrated in `Table 15` by the lower MSE and MAE values and higher R$^2$ value, the SVR prediction model for mean sommelier quality rating more successfully produces predictions than the regularized linear regression prediction model.
+
+In addition to providing more accurate predictions, as the SVR model can be rapidly tuned on the current data, this prediction model will allow for increased longevity in prediction capabilities.  The SVR model will require fewer re-visits to ensure the model remains the best fit to the current data parameters, with slightly less potential over fitting.  As wines change and evolve, this SVR prediction model will evolve in the same way.
+
+# Conclusions
+
+Overall the prediction models created by the support vector machine algorithms resulted in improved prediction capabilities for both variables of interest (median sommelier quality ranking and wine type [red / white]).  For median sommelier quality ranking the SVR model produced predictions with an R$^2$ nearly double that seen in the regularized linear regression prediction model, indicating that the increased flexibility of this model aids in the accurate prediction of wine quality.  Additionally while the prediction of white vs red models all appear to be over-fitted, the SVR C-classification model demonstrated less overfitting with incredibly high accuracy and less data preparation prior to model utilization.
+
+Due to the increased flexibility to new data added to the model over time and demonstrated better predictive outputs both the SVM C-classification and SVR models should be implemented to allow for wine quality and wine type predictions based on chemical composition alone.  Through utilizing these predictive models, wine makers can better predict how well various batches will be rated on their quality by sampling a small quantity of wine prior to bottling and aging.  This will allow for more dynamic pricing and prevent wine makers from investing in long term storage and aging of bad batches.  Additionally the SVM C-classification model will allow wine makers to better classify their wine blends to either white or red based on a chemical composition sample. This will be useful as blends utilize less and less grape skin in the fermentation process and produce clearer wines that may still meet the composition qualifications of a "Red".
+
+# Citations
+
+<font class="hred">Data</font>
+<br>
+[1] P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. 
+  Modeling wine preferences by data mining from physicochemical properties.
+  In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-9236.
+  (obtained from: https://archive.ics.uci.edu/dataset/186/wine+quality)
+
+
+<font class="hred">Wine Facts</font>
+<br>
+[2] Dunham, J. (2025). Wine Facts. The National Association of American Wineries. 
+  https://wineamerica.org/the-magic-of-wine/wine-facts/
+
+
+[3]  Sussman, Z. (2022). What's the Difference Between Red and White Wine? Retrieved 2025, from https://www.foodandwine.com/wine/whats-difference-between-red-and-white-wine 
+
+[4] Gardener, D., & Kelly, M. (2025). Volatile Acidity in Wine. https://extension.psu.edu/volatile-acidity-in-wine
+
+[5]  Stockley, Creina et al. "So2 and Wine: A Review." OIV Collective Expertise Document, 1 ed., International Organisation of Vine and Wine (OIV), March 2021 2021, pp. 1 - 30. general editor, OIV Publications, 2025.
+(obtained from: https://www.oiv.int/public/medias/7840/oiv-collective-expertise-document-so2-and-wine-a-review.pdf)
